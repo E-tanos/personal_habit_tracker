@@ -1,0 +1,1172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Habits">
+<meta name="theme-color" content="#1d9466">
+<title>Habit Grid</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}
+img{max-width:100%}
+[hidden]:not([hidden=until-found i]){display:none!important}
+</style>
+<style>
+/* Layout: one narrow column; Habits and Journal tabs; each view is today first, then the year grid, then detail. */
+:root {
+  --bg: #f4f6f4;
+  --surface: #ffffff;
+  --fg: #16201b;
+  --muted: #5d6b64;
+  --line: #dbe2de;
+  --accent: #1d9466;
+  --accent-ink: #ffffff;
+  --cell0: #e3e9e5;
+  --cellnone: #eef2ef;
+  --danger: #c2412f;
+  --jl: 50%;
+  --h-jade: #1d9466; --h-cobalt: #3561e6; --h-amber: #c98204; --h-coral: #d9533f; --h-violet: #7652d1; --h-teal: #12869a;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --shadow: 0 10px 30px rgba(20, 35, 28, .14);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1311; --surface: #161d1a; --fg: #e5ebe8; --muted: #8e9b95; --line: #25302b;
+  --accent: #33bd87; --accent-ink: #06140e; --cell0: #1f2925; --cellnone: #19211e; --danger: #ef7a66; --jl: 56%;
+  --h-jade: #33bd87; --h-cobalt: #6d92ff; --h-amber: #f0ad2e; --h-coral: #f27a66; --h-violet: #a387ff; --h-teal: #35b9cc;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0e1311; --surface: #161d1a; --fg: #e5ebe8; --muted: #8e9b95; --line: #25302b;
+  --accent: #33bd87; --accent-ink: #06140e; --cell0: #1f2925; --cellnone: #19211e; --danger: #ef7a66; --jl: 56%;
+  --h-jade: #33bd87; --h-cobalt: #6d92ff; --h-amber: #f0ad2e; --h-coral: #f27a66; --h-violet: #a387ff; --h-teal: #35b9cc;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.45; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 720px; margin: 0 auto; padding-block: 18px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 22px; }
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 26px; letter-spacing: -.01em; margin: 0; }
+.tabs { display: inline-flex; background: var(--cell0); border-radius: 999px; padding: 3px; }
+.tabs button { border: 0; background: transparent; padding: 7px 16px; border-radius: 999px; font-weight: 500; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+section { display: grid; gap: 12px; min-width: 0; }
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 19px; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; min-width: 0; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 14px; font-weight: 500; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--danger); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.notice { font-size: 13px; color: var(--muted); background: var(--cellnone); border: 1px dashed var(--line); border-radius: 10px; padding: 8px 12px; }
+
+/* Today list */
+.progress { display: flex; align-items: center; gap: 10px; }
+.bar { flex: 1; height: 6px; background: var(--cell0); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .25s ease; }
+.list { display: grid; gap: 8px; }
+.row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-height: 58px; }
+.row .tick { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--hc, var(--accent)); display: grid; place-items: center; transition: background .15s; }
+.row .tick svg { width: 16px; height: 16px; opacity: 0; color: var(--surface); }
+.row.done .tick { background: var(--hc, var(--accent)); }
+.row.done .tick svg { opacity: 1; }
+.row .txt { min-width: 0; flex: 1; display: grid; }
+.row .name { font-weight: 500; overflow-wrap: anywhere; }
+.row.done .name { color: var(--muted); }
+.row .meta { font-size: 12.5px; color: var(--muted); }
+.row.dim { opacity: .62; }
+.group-label { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-top: 6px; }
+.empty { text-align: center; padding: 26px 18px; display: grid; gap: 10px; justify-items: center; }
+.empty h3 { font-family: var(--display); font-size: 20px; margin: 0; }
+.empty p { margin: 0; color: var(--muted); max-width: 40ch; }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; }
+.stat b { font-family: var(--mono); font-size: 20px; font-weight: 500; }
+.stat span { font-size: 12px; color: var(--muted); }
+
+/* Heat map */
+.hm-scroll { overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 4px; scrollbar-width: thin; }
+.hm { display: grid; grid-template-columns: auto max-content; grid-template-rows: auto auto; column-gap: 6px; row-gap: 4px; width: max-content; }
+.hm-months { grid-column: 2; grid-row: 1; display: grid; grid-template-columns: repeat(var(--cols), var(--cell)); column-gap: var(--gap); font-size: 10.5px; color: var(--muted); height: 14px; }
+.hm-months span { white-space: nowrap; }
+.hm-days { grid-column: 1; grid-row: 2; display: grid; grid-template-rows: repeat(7, var(--cell)); row-gap: var(--gap); font-size: 10px; color: var(--muted); position: sticky; left: 0; background: var(--hm-bg, var(--surface)); padding-right: 4px; z-index: 1; }
+.hm-days span { line-height: var(--cell); }
+.hm-cells { grid-column: 2; grid-row: 2; display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, var(--cell)); grid-auto-columns: var(--cell); gap: var(--gap); }
+.c { width: var(--cell); height: var(--cell); border-radius: 3px; border: 0; padding: 0; background: var(--cell0); display: block; }
+.c.ln { background: var(--cellnone); }
+.c.l1 { background: color-mix(in srgb, var(--hc) 30%, var(--cell0)); }
+.c.l2 { background: color-mix(in srgb, var(--hc) 55%, var(--cell0)); }
+.c.l3 { background: color-mix(in srgb, var(--hc) 78%, var(--cell0)); }
+.c.l4 { background: var(--hc); }
+.c.fut { visibility: hidden; }
+.c.ahead { opacity: .55; }
+.c.ahead:hover { filter: none; }
+.yearnav { display: inline-flex; align-items: center; gap: 8px; }
+.yearnav .icon-btn { width: 30px; height: 30px; font-size: 18px; line-height: 1; }
+.yearnav .icon-btn:disabled { opacity: .35; cursor: default; }
+.c.today { box-shadow: 0 0 0 1.5px var(--fg); }
+.c:hover { filter: brightness(1.12); }
+.legend { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); justify-content: flex-end; flex-wrap: wrap; }
+.legend .c { --cell: 11px; width: 11px; height: 11px; }
+.legend .note { margin-right: auto; }
+
+/* Habit cards */
+.card { display: grid; gap: 10px; }
+.card-head { display: flex; align-items: center; gap: 10px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--hc); flex: none; }
+.card-title { min-width: 0; flex: 1; display: grid; }
+.card-title b { font-weight: 600; overflow-wrap: anywhere; }
+.icon-btn { border: 1px solid var(--line); background: transparent; border-radius: 9px; width: 34px; height: 34px; display: grid; place-items: center; color: var(--muted); flex: none; }
+.icon-btn svg { width: 16px; height: 16px; }
+.streaks { display: flex; gap: 14px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+.streaks b { color: var(--fg); font-family: var(--mono); font-weight: 500; }
+details.archived summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.arch-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.arch-row span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+/* Journal */
+.scale { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 4px; }
+.scale button { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; height: 38px; padding: 0; font-family: var(--mono); font-weight: 500; font-size: 14px; }
+.scale button[aria-pressed="true"] { background: var(--rc); border-color: var(--rc); color: #fff; }
+.scale-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+textarea { width: 100%; min-height: 92px; resize: vertical; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; line-height: 1.45; }
+.j-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.j-actions .saved { font-size: 12.5px; color: var(--muted); margin-right: auto; }
+.jc { background: hsl(calc(var(--r) * 12) 64% var(--jl)); }
+.ramp { width: 120px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, hsl(0 64% var(--jl)), hsl(60 64% var(--jl)), hsl(120 64% var(--jl))); }
+.entries { display: grid; gap: 8px; }
+.entry { display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.badge { flex: none; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-family: var(--mono); font-weight: 500; }
+.entry .txt { min-width: 0; display: grid; gap: 2px; }
+.entry .txt small { color: var(--muted); font-size: 12px; }
+.entry .txt p { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+
+/* To-do */
+.addbar { display: grid; gap: 10px; }
+.addrow { display: flex; gap: 8px; }
+.addrow input[type="text"] { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.whenrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.whenrow input[type="date"], .whenrow input[type="time"], .field input[type="date"], .field input[type="time"] { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--muted); }
+.chk input { width: 18px; height: 18px; accent-color: var(--accent); }
+.hint { font-size: 12.5px; color: var(--muted); }
+.todo { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px 8px 12px; min-height: 54px; }
+.todo .tick { flex: none; width: 28px; height: 28px; border-radius: 8px; border: 2px solid var(--accent); background: transparent; display: grid; place-items: center; padding: 0; }
+.todo .tick svg { width: 15px; height: 15px; opacity: 0; color: var(--surface); }
+.todo.done .tick { background: var(--accent); }
+.todo.done .tick svg { opacity: 1; }
+.todo .body { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 4px 0; display: grid; }
+.todo .body b { font-weight: 500; overflow-wrap: anywhere; }
+.todo.done .body b { color: var(--muted); text-decoration: line-through; }
+.todo .body span { font-size: 12.5px; color: var(--muted); }
+.todo .body span.late { color: var(--danger); }
+.todo .warn { font-size: 12.5px; color: var(--danger); display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.todo .warn button { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; text-decoration: underline; font-size: 12.5px; }
+.bell { width: 14px; height: 14px; vertical-align: -2px; margin-right: 3px; }
+.bb { background: var(--cellnone); border: 1px dashed var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; }
+.bb .todo { background: var(--surface); }
+
+/* Sheet */
+.overlay { position: fixed; inset: 0; background: rgba(8, 14, 11, .45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--surface); width: 100%; max-width: 520px; max-height: 88%; overflow-y: auto; border-radius: 18px 18px 0 0; padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 14px; box-shadow: var(--shadow); }
+@media (min-width: 640px) { .overlay { align-items: center; } .sheet { border-radius: 18px; } }
+.sheet h3 { font-family: var(--display); font-size: 20px; margin: 0; }
+.field { display: grid; gap: 6px; }
+.field > label, .field > .lab { font-size: 13px; font-weight: 500; color: var(--muted); }
+.field input[type="text"] { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: var(--cell0); padding: 3px; border-radius: 11px; }
+.seg button { border: 0; background: transparent; border-radius: 8px; padding: 8px 4px; font-size: 13.5px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.days button { border: 1px solid var(--line); background: var(--surface); border-radius: 9px; height: 38px; font-weight: 500; }
+.days button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.stepper { display: flex; align-items: center; gap: 12px; }
+.stepper button { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 18px; }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatches button { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--hc); }
+.swatches button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--hc); }
+.sheet-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.sheet-actions .left { margin-right: auto; }
+.err { color: var(--danger); font-size: 13px; min-height: 1em; }
+
+/* Toast */
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 12px; display: flex; gap: 14px; align-items: center; z-index: 30; font-size: 14px; box-shadow: var(--shadow); max-width: calc(100% - 32px); }
+.toast button { background: transparent; border: 0; color: var(--bg); font-weight: 600; text-decoration: underline; padding: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<!--
+  Standalone storage shim. The original artifact read and wrote through a
+  claude.ai runtime ("window.claude.use"). This small replacement implements the
+  same collection/doc API on top of localStorage so the app runs on its own.
+  It must load before the app script below.
+-->
+<script>
+(function () {
+  "use strict";
+  var KEY = "habit-grid-v1";
+  var store = {};
+  try { store = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { store = {}; }
+  var listeners = {};
+
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+  function clone(x) { return x === undefined ? undefined : JSON.parse(JSON.stringify(x)); }
+  function snapFor(c) {
+    var m = store[c] || {};
+    return {
+      metadata: { fromCache: false },
+      docs: Object.keys(m).map(function (id) { return { id: id, data: function () { return clone(m[id]); } }; })
+    };
+  }
+  function emit(c) { (listeners[c] || []).forEach(function (f) { f(snapFor(c)); }); }
+  // Deep merge, like a Firestore update: nested objects merge, other values replace.
+  function merge(t, s) {
+    for (var k in s) {
+      var v = s[k];
+      if (v && typeof v === "object" && !Array.isArray(v) && t[k] && typeof t[k] === "object" && !Array.isArray(t[k])) merge(t[k], v);
+      else t[k] = clone(v);
+    }
+    return t;
+  }
+  function doc(path) {
+    var p = path.split("/"), c = p[0], id = p[1];
+    return {
+      get: function () {
+        var d = (store[c] || {})[id];
+        return Promise.resolve({ exists: d !== undefined, data: function () { return clone(d); } });
+      },
+      set: function (data) {
+        store[c] = store[c] || {}; store[c][id] = clone(data); persist(); emit(c);
+        return Promise.resolve();
+      },
+      update: function (data) {
+        store[c] = store[c] || {};
+        if (store[c][id] === undefined) store[c][id] = {};
+        merge(store[c][id], data); persist(); emit(c);
+        return Promise.resolve();
+      },
+      delete: function () {
+        if (store[c]) delete store[c][id];
+        persist(); emit(c);
+        return Promise.resolve();
+      }
+    };
+  }
+  var db = {
+    doc: doc,
+    collection: function (c) {
+      return {
+        onSnapshot: function (next) {
+          (listeners[c] = listeners[c] || []).push(next);
+          setTimeout(function () { next(snapFor(c)); }, 0);
+          return function () {};
+        }
+      };
+    }
+  };
+  // Only the "db" capability exists here. Calendar reminders are not wired up.
+  window.claude = { use: function (name) { return Promise.resolve(name === "db" ? db : null); } };
+
+  // Import a backup file (JSON with habits / log / journal / todos) once on the phone.
+  function addImport() {
+    var b = document.createElement("button");
+    b.textContent = "Import backup";
+    b.style.cssText = "position:fixed;right:12px;bottom:12px;z-index:5;font:13px system-ui,sans-serif;padding:6px 10px;border-radius:8px;border:1px solid #888;background:#fff;color:#000;opacity:.75";
+    var f = document.createElement("input");
+    f.type = "file"; f.accept = "application/json,.json"; f.style.display = "none";
+    b.onclick = function () { f.click(); };
+    f.onchange = function () {
+      var file = f.files[0];
+      if (!file) return;
+      file.text().then(function (t) {
+        var data = JSON.parse(t);
+        Object.keys(data).forEach(function (c) { store[c] = Object.assign(store[c] || {}, data[c]); });
+        persist();
+        location.reload();
+      }).catch(function () { alert("That file didn't import."); });
+    };
+    document.body.appendChild(b);
+    document.body.appendChild(f);
+  }
+  document.addEventListener("DOMContentLoaded", addImport);
+})();
+</script>
+
+<div class="wrap" id="app">
+  <header class="top">
+    <h1 class="brand">Habit Grid</h1>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-habits" aria-selected="true">Habits</button>
+      <button role="tab" id="tab-todo" aria-selected="false">To-do</button>
+      <button role="tab" id="tab-journal" aria-selected="false">Journal</button>
+    </div>
+  </header>
+  <div id="notice" class="notice" hidden></div>
+  <div id="view"><p class="sub">Loading your habits…</p></div>
+</div>
+<div id="layer"></div>
+
+<script>
+(function () {
+  "use strict";
+  // ---------- helpers ----------
+  function h(tag, attrs) {
+    const el = document.createElement(tag);
+    if (attrs) for (const k in attrs) {
+      const v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "style") el.style.cssText = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (let i = 2; i < arguments.length; i++) {
+      const kids = [].concat(arguments[i]);
+      for (const c of kids) {
+        if (c == null || c === false) continue;
+        el.append(c.nodeType ? c : document.createTextNode(String(c)));
+      }
+    }
+    return el;
+  }
+  const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>';
+  const PENCIL = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5l3 3L5 14H2v-3z"/></svg>';
+  function svg(markup) { const s = document.createElement("span"); s.innerHTML = markup; return s.firstChild; }
+
+  // ---------- dates (America/Los_Angeles) ----------
+  const TZ = "America/Los_Angeles";
+  const fmtKey = new Intl.DateTimeFormat("en-US", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+  function todayKey() {
+    const p = fmtKey.formatToParts(new Date());
+    const g = (t) => p.find((x) => x.type === t).value;
+    return g("year") + "-" + g("month") + "-" + g("day");
+  }
+  const kd = (k) => { const a = k.split("-").map(Number); return new Date(Date.UTC(a[0], a[1] - 1, a[2])); };
+  const dk = (d) => d.toISOString().slice(0, 10);
+  const addDays = (k, n) => { const d = kd(k); d.setUTCDate(d.getUTCDate() + n); return dk(d); };
+  const dow = (k) => kd(k).getUTCDay();
+  const weekStart = (k) => addDays(k, -dow(k));
+  const fmt = (k, o) => kd(k).toLocaleDateString("en-US", Object.assign({ timeZone: "UTC" }, o));
+  const fmtLong = (k) => fmt(k, { weekday: "long", month: "long", day: "numeric" });
+  const fmtShort = (k) => fmt(k, { weekday: "short", month: "short", day: "numeric" });
+  const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const COLORS = ["jade", "cobalt", "amber", "coral", "violet", "teal"];
+
+  // ---------- state ----------
+  const S = {
+    db: null, offline: false,
+    habits: [], habitsLoaded: false,
+    logDocs: new Map(), logLoaded: false,
+    journalDocs: new Map(), journalLoaded: false,
+    serverSeen: false,
+    checks: new Map(), firstCheck: new Map(),
+    pending: new Map(),
+    jPending: new Map(),
+    tab: ({ "#journal": "journal", "#todo": "todo" })[location.hash] || "habits",
+    todos: [], todosLoaded: false,
+    todoDraft: { title: "", due: "", time: "", remind: true },
+    today: todayKey(),
+    year: Number(todayKey().slice(0, 4)),
+    jDraft: null,
+  };
+  const scrollMemo = new Map();
+
+  function rebuildChecks() {
+    const m = new Map(), first = new Map();
+    for (const [month, data] of S.logDocs) {
+      const d = (data && data.d) || {};
+      for (const day in d) {
+        const key = month + "-" + day;
+        for (const hid in d[day]) {
+          if (d[day][hid] !== true) continue;
+          if (!m.has(key)) m.set(key, new Set());
+          m.get(key).add(hid);
+          if (!first.has(hid) || key < first.get(hid)) first.set(hid, key);
+        }
+      }
+    }
+    S.checks = m; S.firstCheck = first;
+  }
+  function isDone(hid, key) {
+    const p = S.pending.get(key + "|" + hid);
+    if (p !== undefined) return p;
+    const s = S.checks.get(key);
+    return !!(s && s.has(hid));
+  }
+  function journalFor(key) {
+    if (S.jPending.has(key)) return S.jPending.get(key);
+    const doc = S.journalDocs.get(key.slice(0, 7));
+    const e = doc && doc.d && doc.d[key.slice(8)];
+    if (!e || typeof e.r !== "number") return null;
+    return { r: e.r, t: e.t || "" };
+  }
+
+  // ---------- scheduling & stats ----------
+  const active = () => S.habits.filter((x) => !x.archived).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const archived = () => S.habits.filter((x) => x.archived);
+  function baseSched(hb, key) {
+    if (hb.kind === "daily") return true;
+    if (hb.kind === "weekdays") return (hb.days || []).includes(dow(key));
+    return false;
+  }
+  function inRange(hb, key) { return key >= hb.start && !(hb.archivedAt && key >= hb.archivedAt); }
+  function minStart(hb) { const f = S.firstCheck.get(hb.id); return f && f < hb.start ? f : hb.start; }
+  function weekCount(hid, ws) { let n = 0; for (let i = 0; i < 7; i++) if (isDone(hid, addDays(ws, i))) n++; return n; }
+
+  function dayStats(key) {
+    let total = 0, done = 0;
+    for (const hb of S.habits) {
+      const dn = isDone(hb.id, key);
+      if (dn) { total++; done++; }
+      else if (hb.kind !== "weekly" && inRange(hb, key) && baseSched(hb, key)) total++;
+    }
+    return { total, done };
+  }
+  function levelFor(st) {
+    if (!st.total) return "n";
+    const r = st.done / st.total;
+    return r === 0 ? 0 : r >= 1 ? 4 : r >= 0.66 ? 3 : r >= 0.33 ? 2 : 1;
+  }
+  function habitStreak(hb) {
+    const T = S.today;
+    if (hb.kind === "weekly") {
+      const tgt = hb.target || 1;
+      const thisW = weekStart(T);
+      const lastW = hb.archivedAt ? weekStart(addDays(hb.archivedAt, -1)) : thisW;
+      const firstW = weekStart(minStart(hb));
+      let cur = 0, w = lastW;
+      if (w === thisW && weekCount(hb.id, w) < tgt) w = addDays(w, -7);
+      while (w >= firstW && weekCount(hb.id, w) >= tgt) { cur++; w = addDays(w, -7); }
+      let best = 0, run = 0;
+      for (let x = firstW; x <= lastW; x = addDays(x, 7)) {
+        if (weekCount(hb.id, x) >= tgt) { run++; if (run > best) best = run; }
+        else if (x !== thisW) run = 0;
+      }
+      return { cur, best, unit: "week" };
+    }
+    const first = minStart(hb);
+    const last = hb.archivedAt && addDays(hb.archivedAt, -1) < T ? addDays(hb.archivedAt, -1) : T;
+    let d = last, cur = 0;
+    if (d === T && baseSched(hb, T) && !isDone(hb.id, T)) d = addDays(T, -1);
+    while (d >= first) {
+      if (isDone(hb.id, d)) cur++;
+      else if (baseSched(hb, d)) break;
+      d = addDays(d, -1);
+    }
+    let best = 0, run = 0;
+    for (let x = first; x <= last; x = addDays(x, 1)) {
+      if (isDone(hb.id, x)) { run++; if (run > best) best = run; }
+      else if (baseSched(hb, x) && x !== T) run = 0;
+    }
+    return { cur, best, unit: "day" };
+  }
+  function overallStats() {
+    const T = S.today;
+    let first = T;
+    for (const hb of S.habits) { const m = minStart(hb); if (m < first) first = m; }
+    let cur = 0, d = T;
+    const tStat = dayStats(T);
+    if (tStat.done < tStat.total) d = addDays(T, -1);
+    while (d >= first) {
+      const st = dayStats(d);
+      if (st.total) { if (st.done === st.total) cur++; else break; }
+      d = addDays(d, -1);
+    }
+    let best = 0, run = 0, checks = 0;
+    for (let x = first; x <= T; x = addDays(x, 1)) {
+      const st = dayStats(x);
+      if (inYear(x)) checks += st.done;
+      if (!st.total) continue;
+      if (st.done === st.total) { run++; if (run > best) best = run; }
+      else if (x !== T) run = 0;
+    }
+    return { cur, best, checks };
+  }
+  function schedLabel(hb) {
+    if (hb.kind === "daily") return "Every day";
+    if (hb.kind === "weekly") return (hb.target || 1) + "× a week";
+    const d = (hb.days || []).slice().sort();
+    if (d.join() === "1,2,3,4,5") return "Weekdays";
+    if (d.join() === "0,6") return "Weekends";
+    return d.map((i) => DAY_NAMES[i]).join(" · ");
+  }
+  const plural = (n, u) => n + " " + u + (n === 1 ? "" : "s");
+
+  // ---------- writes ----------
+  const queues = new Map();
+  function enqueue(path, fn) {
+    const prev = queues.get(path) || Promise.resolve();
+    const next = prev.catch(() => {}).then(fn);
+    queues.set(path, next);
+    return next;
+  }
+  async function mergeMonth(coll, month, payload) {
+    const ref = S.db.doc(coll + "/" + month);
+    const snap = await ref.get();
+    if (snap.exists) await ref.update(payload);
+    else await ref.set(payload);
+  }
+
+  function toggle(hid, key, opts) {
+    if (key > S.today) return;
+    const val = !isDone(hid, key);
+    const pk = key + "|" + hid;
+    S.pending.set(pk, val);
+    const hb = S.habits.find((x) => x.id === hid);
+    if (val && hb && key < hb.start) saveHabit(hid, { start: key });
+    render();
+    if (opts && opts.toast) toast((val ? "Checked " : "Unchecked ") + (hb ? hb.name : "") + ", " + fmtShort(key), () => toggle(hid, key));
+    if (!S.db) return;
+    const month = key.slice(0, 7), day = key.slice(8);
+    enqueue("log/" + month, () => mergeMonth("log", month, { d: { [day]: { [hid]: val } } }))
+      .then(() => { if (S.pending.get(pk) === val) { applyLocalLog(month, day, hid, val); S.pending.delete(pk); render(); } })
+      .catch(() => { if (S.pending.get(pk) === val) S.pending.delete(pk); render(); toast("That check didn't save. Try again."); });
+  }
+  function applyLocalLog(month, day, hid, val) {
+    const doc = JSON.parse(JSON.stringify(S.logDocs.get(month) || { d: {} }));
+    doc.d = doc.d || {}; doc.d[day] = doc.d[day] || {}; doc.d[day][hid] = val;
+    S.logDocs.set(month, doc); rebuildChecks();
+  }
+
+  async function saveHabit(id, fields) {
+    if (!S.db) {
+      const hb = S.habits.find((x) => x.id === id);
+      if (hb) Object.assign(hb, fields); else S.habits.push(Object.assign({ id }, fields));
+      render(); return;
+    }
+    const ref = S.db.doc("habits/" + id);
+    return enqueue("habits/" + id, async () => {
+      const exists = S.habits.some((x) => x.id === id);
+      if (exists) await ref.update(fields); else await ref.set(fields);
+    });
+  }
+  async function deleteHabit(id) {
+    if (!S.db) { S.habits = S.habits.filter((x) => x.id !== id); render(); return; }
+    await enqueue("habits/" + id, () => S.db.doc("habits/" + id).delete());
+  }
+  function newId() { return "h" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  function saveJournal(key, entry) {
+    S.jPending.set(key, entry);
+    render();
+    if (!S.db) return Promise.resolve();
+    const month = key.slice(0, 7), day = key.slice(8);
+    const body = entry ? { r: entry.r, t: entry.t } : { r: null, t: "" };
+    return enqueue("journal/" + month, () => mergeMonth("journal", month, { d: { [day]: body } }))
+      .then(() => {
+        if (S.jPending.get(key) === entry) {
+          const doc = JSON.parse(JSON.stringify(S.journalDocs.get(month) || { d: {} }));
+          doc.d = doc.d || {}; doc.d[day] = body; S.journalDocs.set(month, doc);
+          S.jPending.delete(key); render();
+        }
+      })
+      .catch((e) => { if (S.jPending.get(key) === entry) S.jPending.delete(key); render(); toast("That entry didn't save. Try again."); throw e; });
+  }
+
+  // ---------- toast ----------
+  let toastTimer = null;
+  function toast(msg, undo) {
+    const layer = document.getElementById("toast-host") || document.body.appendChild(h("div", { id: "toast-host" }));
+    layer.replaceChildren(h("div", { class: "toast", role: "status" }, h("span", { text: msg }),
+      undo ? h("button", { onclick: () => { layer.replaceChildren(); undo(); } }, "Undo") : null));
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => layer.replaceChildren(), 4200);
+  }
+
+  // ---------- heat map ----------
+  function grid(opts) {
+    const T = S.today;
+    const Y = S.year;
+    const jan1 = Y + "-01-01", dec31 = Y + "-12-31";
+    const start = weekStart(jan1);
+    const colOf = (k) => Math.floor((kd(k) - kd(start)) / 864e5 / 7);
+    const cols = colOf(dec31) + 1;
+    const months = h("div", { class: "hm-months" });
+    for (let m = 1; m <= 12; m++) {
+      const k = Y + "-" + String(m).padStart(2, "0") + "-01";
+      months.append(h("span", { style: "grid-column:" + (colOf(k) + 1) + " / span 3", text: fmt(k, { month: "short" }) }));
+    }
+    const days = h("div", { class: "hm-days" }, ["", "Mon", "", "Wed", "", "Fri", ""].map((t) => h("span", { text: t })));
+    const cells = h("div", { class: "hm-cells", role: "grid", "aria-label": opts.label + ", " + Y });
+    for (let c = 0; c < cols; c++) {
+      for (let r = 0; r < 7; r++) {
+        const k = addDays(start, 7 * c + r);
+        if (k < jan1 || k > dec31) { cells.append(h("span", { class: "c fut" })); continue; }
+        if (k > T) { cells.append(h("span", { class: "c ln ahead", title: fmtShort(k) })); continue; }
+        const info = opts.cell(k);
+        const b = h("button", { class: "c " + info.cls + (k === T ? " today" : ""), "data-k": k, title: info.title, "aria-label": info.title });
+        if (info.style) b.style.cssText = info.style;
+        cells.append(b);
+      }
+    }
+    cells.addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (b) opts.onTap(b.dataset.k); });
+    const g = h("div", { class: "hm", style: "--cell:" + opts.cell_px + "px;--gap:" + opts.gap + "px;--cols:" + cols + ";--hc:" + opts.hc }, months, days, cells);
+    const sc = h("div", { class: "hm-scroll" }, g);
+    sc.dataset.memo = opts.id;
+    sc.addEventListener("scroll", () => { scrollMemo.set(opts.id, sc.scrollWidth - sc.clientWidth - sc.scrollLeft); }, { passive: true });
+    return sc;
+  }
+  function restoreScroll(root) {
+    root.querySelectorAll(".hm-scroll").forEach((sc) => {
+      const memo = scrollMemo.get(sc.dataset.memo);
+      if (memo !== undefined) { sc.scrollLeft = sc.scrollWidth - sc.clientWidth - memo; return; }
+      const t = sc.querySelector(".today");
+      if (t && t.getBoundingClientRect) {
+        const a = t.getBoundingClientRect(), b = sc.getBoundingClientRect();
+        sc.scrollLeft = Math.max(0, sc.scrollLeft + (a.right - b.right) + 28);
+      } else sc.scrollLeft = sc.scrollWidth;
+    });
+  }
+  function firstYear() {
+    let first = S.today;
+    for (const hb of S.habits) { const m = minStart(hb); if (m < first) first = m; }
+    for (const id of S.journalDocs.keys()) if (id + "-01" < first) first = id + "-01";
+    return Number(first.slice(0, 4));
+  }
+  function yearNav() {
+    const cur = Number(S.today.slice(0, 4)), min = Math.min(firstYear(), cur);
+    const go = (y) => { S.year = y; scrollMemo.clear(); render(); };
+    return h("div", { class: "yearnav" },
+      h("button", { class: "icon-btn", "aria-label": "Previous year", disabled: S.year <= min, onclick: () => go(S.year - 1) }, "‹"),
+      h("b", { class: "mono", text: S.year }),
+      h("button", { class: "icon-btn", "aria-label": "Next year", disabled: S.year >= cur, onclick: () => go(S.year + 1) }, "›"));
+  }
+  function inYear(k) { return k.slice(0, 4) === String(S.year); }
+
+  // ---------- views ----------
+  function habitRow(hb, key, meta, dim, after) {
+    const done = isDone(hb.id, key);
+    const b = h("button", { class: "row" + (done ? " done" : "") + (dim ? " dim" : ""), style: "--hc:var(--h-" + (hb.color || "jade") + ")", "aria-pressed": done ? "true" : "false",
+      onclick: () => { toggle(hb.id, key); if (after) after(); } },
+      h("span", { class: "tick" }, svg(CHECK)),
+      h("span", { class: "txt" }, h("span", { class: "name", text: hb.name }), meta ? h("span", { class: "meta", text: meta }) : null));
+    return b;
+  }
+
+  function renderHabits() {
+    const T = S.today;
+    const list = active();
+    const out = [];
+
+    // Today
+    const due = [], other = [];
+    for (const hb of list) {
+      if (hb.kind === "weekly") {
+        const cnt = weekCount(hb.id, weekStart(T)), tgt = hb.target || 1;
+        const meta = cnt + " of " + tgt + " this week";
+        if (cnt < tgt || isDone(hb.id, T)) due.push([hb, meta]); else other.push([hb, meta + ", done"]);
+      } else if (baseSched(hb, T)) {
+        const s = habitStreak(hb);
+        due.push([hb, s.cur ? plural(s.cur, "day") + " streak" : schedLabel(hb)]);
+      } else other.push([hb, schedLabel(hb)]);
+    }
+    const doneCount = due.filter(([hb]) => isDone(hb.id, T)).length;
+    const todaySec = h("section", null,
+      h("div", { class: "sec-head" }, h("h2", { text: "Today" }), h("span", { class: "sub", text: fmtLong(T) })));
+    if (!S.habitsLoaded) {
+      todaySec.append(h("p", { class: "sub", text: "Loading your habits…" }));
+    } else if (!list.length) {
+      todaySec.append(h("div", { class: "panel empty" },
+        h("h3", { text: "Add your first habit" }),
+        h("p", { text: "Pick something to do every day, on certain days, or a few times a week. Check it off here and it fills in your year below." }),
+        h("button", { class: "btn primary", onclick: () => openHabitSheet() }, "Add a habit")));
+    } else {
+      const pct = due.length ? Math.round((doneCount / due.length) * 100) : 0;
+      todaySec.append(h("div", { class: "progress" },
+        h("div", { class: "bar" }, h("i", { style: "width:" + pct + "%" })),
+        h("span", { class: "sub mono", text: due.length ? (doneCount === due.length ? "All " + due.length + " done" : doneCount + " of " + due.length + " done") : "Nothing due" })));
+      const l = h("div", { class: "list" }, due.map(([hb, m]) => habitRow(hb, T, m)));
+      if (other.length) {
+        l.append(h("div", { class: "group-label", text: "Not due today" }));
+        other.forEach(([hb, m]) => l.append(habitRow(hb, T, m, true)));
+      }
+      todaySec.append(l);
+    }
+    out.push(todaySec);
+
+    // Year
+    const os = overallStats();
+    out.push(h("section", null,
+      h("div", { class: "sec-head" }, h("h2", { text: "Your year" }), yearNav()),
+      h("span", { class: "sub", text: "Tap a day to check off or undo" }),
+      h("div", { class: "stats" },
+        h("div", { class: "stat" }, h("b", { text: os.cur }), h("span", { text: "day streak, everything done" })),
+        h("div", { class: "stat" }, h("b", { text: os.best }), h("span", { text: "longest streak" })),
+        h("div", { class: "stat" }, h("b", { text: os.checks }), h("span", { text: "check-ins in " + S.year }))),
+      h("div", { class: "panel" },
+        grid({ id: "all", label: "All habits, past year", cell_px: 13, gap: 3, hc: "var(--accent)",
+          cell: (k) => { const st = dayStats(k); const lv = levelFor(st);
+            return { cls: lv === "n" ? "ln" : "l" + lv, title: fmtShort(k) + ": " + (st.total ? st.done + " of " + st.total + " done" : "nothing scheduled") }; },
+          onTap: (k) => openDaySheet(k) })),
+      h("div", { class: "legend" }, h("span", { class: "note", text: "Times-a-week habits count on days you do them." }),
+        "Less", ["ln", "l0", "l1", "l2", "l3", "l4"].map((c) => h("span", { class: "c " + c, style: "--hc:var(--accent)" })), "More")));
+
+    // Habit cards
+    if (list.length || archived().length) {
+      const sec = h("section", null, h("div", { class: "sec-head" }, h("h2", { text: "Habits" }),
+        h("button", { class: "btn", onclick: () => openHabitSheet() }, "+ New habit")));
+      for (const hb of list) {
+        const st = habitStreak(hb);
+        const hc = "var(--h-" + (hb.color || "jade") + ")";
+        sec.append(h("div", { class: "panel card", style: "--hc:" + hc },
+          h("div", { class: "card-head" }, h("span", { class: "dot" }),
+            h("div", { class: "card-title" }, h("b", { text: hb.name }), h("span", { class: "sub", text: schedLabel(hb) })),
+            h("button", { class: "icon-btn", "aria-label": "Edit " + hb.name, onclick: () => openHabitSheet(hb) }, svg(PENCIL))),
+          h("div", { class: "streaks" },
+            h("span", null, "Current ", h("b", { text: st.cur }), " " + st.unit + (st.cur === 1 ? "" : "s")),
+            h("span", null, "Longest ", h("b", { text: st.best }), " " + st.unit + (st.best === 1 ? "" : "s"))),
+          grid({ id: "h-" + hb.id, label: hb.name + ", past year", cell_px: 11, gap: 2, hc,
+            cell: (k) => { const dn = isDone(hb.id, k); const sch = hb.kind !== "weekly" && inRange(hb, k) && baseSched(hb, k);
+              return { cls: dn ? "l4" : sch ? "l0" : "ln", title: fmtShort(k) + ": " + (dn ? "done" : sch ? "missed" : "not scheduled") }; },
+            onTap: (k) => toggle(hb.id, k, { toast: true }) })));
+      }
+      const arch = archived();
+      if (arch.length) {
+        const d = h("details", { class: "archived" }, h("summary", { text: "Archived (" + arch.length + ")" }));
+        for (const hb of arch) {
+          const del = h("button", { class: "btn danger" }, "Delete");
+          let armed = false, t = null;
+          del.onclick = () => {
+            if (!armed) { armed = true; del.textContent = "Tap again to delete"; t = setTimeout(() => { armed = false; del.textContent = "Delete"; }, 3500); return; }
+            clearTimeout(t); deleteHabit(hb.id).catch(() => toast("Couldn't delete that habit."));
+          };
+          d.append(h("div", { class: "arch-row" }, h("span", { text: hb.name }),
+            h("button", { class: "btn", onclick: () => saveHabit(hb.id, { archived: false, archivedAt: null }).catch(() => toast("Couldn't restore that habit.")) }, "Restore"), del));
+        }
+        sec.append(d);
+      }
+      out.push(sec);
+    }
+    return out;
+  }
+
+  function rc(r) { return "hsl(" + r * 12 + " 64% var(--jl))"; }
+  function ratingPicker(value, onPick) {
+    const wrap = h("div", { class: "field" });
+    const row = h("div", { class: "scale", role: "group", "aria-label": "Rate the day from 0 to 10" });
+    for (let i = 0; i <= 10; i++) {
+      row.append(h("button", { type: "button", "aria-pressed": value === i ? "true" : "false", style: "--rc:" + rc(i), onclick: () => onPick(i) }, String(i)));
+    }
+    wrap.append(row, h("div", { class: "scale-ends" }, h("span", { text: "Rough day" }), h("span", { text: "Great day" })));
+    return wrap;
+  }
+  function journalEditor(key, opts) {
+    const saved = journalFor(key);
+    const st = { r: saved ? saved.r : null, t: saved ? saved.t : "" };
+    if (opts.draft && opts.draft.key === key) { st.r = opts.draft.r; st.t = opts.draft.t; }
+    const box = h("div", { style: "display:grid;gap:12px" });
+    const ta = h("textarea", { id: opts.id, placeholder: "A few words about the day", maxlength: "2000" });
+    ta.value = st.t;
+    const status = h("span", { class: "saved" });
+    const saveBtn = h("button", { class: "btn primary" }, saved ? "Update" : "Save");
+    const pickHost = h("div");
+    function paintPicker() { pickHost.replaceChildren(ratingPicker(st.r, (i) => { st.r = i; sync(); paintPicker(); })); }
+    function sync() { if (opts.onDraft) opts.onDraft({ key, r: st.r, t: ta.value }); status.textContent = st.r == null ? "Pick a rating to save" : ""; }
+    ta.addEventListener("input", sync);
+    saveBtn.onclick = () => {
+      if (st.r == null) { status.textContent = "Pick a rating first"; return; }
+      saveBtn.disabled = true;
+      saveJournal(key, { r: st.r, t: ta.value.trim() }).then(() => { if (opts.onSaved) opts.onSaved(); }).catch(() => {}).finally(() => { saveBtn.disabled = false; });
+      if (opts.onDraft) opts.onDraft(null);
+      if (!S.db && opts.onSaved) opts.onSaved();
+    };
+    paintPicker();
+    const actions = h("div", { class: "j-actions" }, status);
+    if (saved && opts.allowClear) actions.append(h("button", { class: "btn ghost", onclick: () => { saveJournal(key, null).catch(() => {}); if (opts.onSaved) opts.onSaved(); } }, "Clear entry"));
+    if (opts.cancel) actions.append(h("button", { class: "btn", onclick: opts.cancel }, "Cancel"));
+    actions.append(saveBtn);
+    status.textContent = saved ? "Saved" : "";
+    box.append(pickHost, ta, actions);
+    return box;
+  }
+
+  function renderJournal() {
+    const T = S.today;
+    const out = [];
+    const todayEntry = journalFor(T);
+    out.push(h("section", null,
+      h("div", { class: "sec-head" }, h("h2", { text: "How was today?" }), h("span", { class: "sub", text: fmtLong(T) })),
+      h("div", { class: "panel" }, S.journalLoaded || !S.db
+        ? journalEditor(T, { id: "j-today", draft: S.jDraft, onDraft: (d) => { S.jDraft = d; }, allowClear: true })
+        : h("p", { class: "sub", text: "Loading your journal…" }))));
+
+    // stats
+    let sum30 = 0, n30 = 0, nYear = 0, streak = 0;
+    for (let x = addDays(T, -29); x <= T; x = addDays(x, 1)) { const e = journalFor(x); if (e) { sum30 += e.r; n30++; } }
+    for (let x = S.year + "-01-01"; x <= S.year + "-12-31" && x <= T; x = addDays(x, 1)) if (journalFor(x)) nYear++;
+    let d = journalFor(T) ? T : addDays(T, -1);
+    while (journalFor(d)) { streak++; d = addDays(d, -1); }
+    out.push(h("section", null,
+      h("div", { class: "sec-head" }, h("h2", { text: "Your year in ratings" }), yearNav()),
+      h("span", { class: "sub", text: "Tap a day to read or edit it" }),
+      h("div", { class: "stats" },
+        h("div", { class: "stat" }, h("b", { text: n30 ? (sum30 / n30).toFixed(1) : "–" }), h("span", { text: "average, last 30 days" })),
+        h("div", { class: "stat" }, h("b", { text: streak }), h("span", { text: "days logged in a row" })),
+        h("div", { class: "stat" }, h("b", { text: nYear }), h("span", { text: "entries in " + S.year }))),
+      h("div", { class: "panel" },
+        grid({ id: "journal", label: "Journal ratings, past year", cell_px: 13, gap: 3, hc: "var(--accent)",
+          cell: (k) => { const e = journalFor(k);
+            return e ? { cls: "jc", style: "--r:" + e.r, title: fmtShort(k) + ": rated " + e.r + " of 10" } : { cls: "ln", title: fmtShort(k) + ": no entry" }; },
+          onTap: (k) => openJournalSheet(k) })),
+      h("div", { class: "legend" }, "0", h("span", { class: "ramp" }), "10")));
+
+    // recent entries
+    const recent = [];
+    for (let x = T; x >= addDays(T, -60) && recent.length < 14; x = addDays(x, -1)) { const e = journalFor(x); if (e) recent.push([x, e]); }
+    if (recent.length) {
+      out.push(h("section", null, h("div", { class: "sec-head" }, h("h2", { text: "Recent entries" })),
+        h("div", { class: "entries" }, recent.map(([k, e]) =>
+          h("button", { class: "entry", onclick: () => openJournalSheet(k) },
+            h("span", { class: "badge", style: "background:" + rc(e.r), text: e.r }),
+            h("span", { class: "txt" }, h("small", { text: fmtShort(k) }), h("p", { text: e.t || "No note" })))))));
+    }
+    return out;
+  }
+
+  // ---------- to-dos ----------
+  const fmtNow = new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  function nowLocal() { const p = fmtNow.formatToParts(new Date()); const g = (t) => p.find((x) => x.type === t).value; return todayKey() + "T" + g("hour") + ":" + g("minute"); }
+  const pad = (n) => String(n).padStart(2, "0");
+  function fmtTime(t) { const a = t.split(":").map(Number); return ((a[0] + 11) % 12 + 1) + ":" + pad(a[1]) + (a[0] < 12 ? " AM" : " PM"); }
+  const REMIND_DEFAULT = "09:00";
+  function wantsReminder(td) {
+    if (!td.remind || !td.due || td.done) return false;
+    return td.due + "T" + (td.time || REMIND_DEFAULT) > nowLocal();
+  }
+  function whenLabel(td) {
+    if (!td.due) return "";
+    const T = S.today;
+    const day = td.due === T ? "Today" : td.due === addDays(T, 1) ? "Tomorrow" : td.due === addDays(T, -1) ? "Yesterday" : fmtShort(td.due);
+    return day + (td.time ? ", " + fmtTime(td.time) : "");
+  }
+
+  // Reminders are not active in this standalone version yet.
+  async function syncReminder(id, td, prev) { return; }
+
+  function saveTodo(id, fields, isNew) {
+    if (!S.db) {
+      const t = S.todos.find((x) => x.id === id);
+      if (t) Object.assign(t, fields); else S.todos.push(Object.assign({ id }, fields));
+      render(); return Promise.resolve();
+    }
+    const ref = S.db.doc("todos/" + id);
+    return enqueue("todos/" + id, () => (isNew ? ref.set(fields) : ref.update(fields)));
+  }
+  function removeTodo(td) {
+    const p = S.db ? enqueue("todos/" + td.id, () => S.db.doc("todos/" + td.id).delete()) : Promise.resolve((S.todos = S.todos.filter((x) => x.id !== td.id), render()));
+    p.catch(() => toast("Couldn't delete that to-do."));
+  }
+  function addTodo(d) {
+    const title = d.title.trim();
+    if (!title) return false;
+    const id = "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const td = { title, due: d.due || null, time: d.due ? d.time || null : null, remind: !!(d.due && d.remind), done: false, doneAt: null, createdAt: Date.now(), calEventId: null, calError: null };
+    saveTodo(id, td, true).then(() => syncReminder(id, td, null)).catch(() => toast("That to-do didn't save. Try again."));
+    return true;
+  }
+  function toggleTodo(td) {
+    const done = !td.done;
+    const next = Object.assign({}, td, { done });
+    saveTodo(td.id, { done, doneAt: done ? Date.now() : null })
+      .then(() => syncReminder(td.id, next, done ? td : Object.assign({}, td, { calEventId: null })))
+      .catch(() => toast("That change didn't save. Try again."));
+    if (done) toast("Done: " + td.title, () => toggleTodo(next));
+  }
+
+  function todoItem(td) {
+    const label = whenLabel(td);
+    const late = td.due && !td.done && (td.due < S.today || (td.due === S.today && td.time && td.time < nowLocal().slice(11)));
+    const span = h("span", { class: late ? "late" : "" });
+    span.append(label || (td.done ? "No date" : ""));
+    const body = h("button", { class: "body", onclick: () => openTodoSheet(td) }, h("b", { text: td.title }), label ? span : null);
+    const row = h("div", { class: "todo" + (td.done ? " done" : "") },
+      h("button", { class: "tick", "aria-label": (td.done ? "Mark not done: " : "Mark done: ") + td.title, "aria-pressed": td.done ? "true" : "false", onclick: () => toggleTodo(td) }, svg(CHECK)),
+      body);
+    return row;
+  }
+
+  function renderTodos() {
+    const T = S.today, out = [];
+    const d = S.todoDraft;
+    const title = h("input", { type: "text", id: "todo-title", placeholder: "Add a to-do", maxlength: "140", autocomplete: "off" });
+    title.value = d.title;
+    title.addEventListener("input", () => { d.title = title.value; });
+    const date = h("input", { type: "date", id: "todo-date", "aria-label": "Due date" });
+    date.value = d.due;
+    const time = h("input", { type: "time", id: "todo-time", "aria-label": "Time", disabled: !d.due });
+    time.value = d.time;
+    const remind = h("input", { type: "checkbox", id: "todo-remind", disabled: !d.due });
+    remind.checked = d.remind;
+    const hint = h("div", { class: "hint" });
+    const paintHint = () => {
+      hint.textContent = !d.due ? "No date puts it on the Backburner." : "Reminders are coming in a later update.";
+    };
+    date.addEventListener("change", () => { d.due = date.value; time.disabled = remind.disabled = !d.due; paintHint(); });
+    time.addEventListener("change", () => { d.time = time.value; paintHint(); });
+    remind.addEventListener("change", () => { d.remind = remind.checked; paintHint(); });
+    paintHint();
+    const submit = (e) => {
+      e.preventDefault();
+      d.title = title.value;
+      if (!addTodo(d)) { title.focus(); return; }
+      S.todoDraft = { title: "", due: "", time: "", remind: true };
+      render();
+      const t = document.getElementById("todo-title"); if (t) t.focus();
+    };
+    out.push(h("section", null,
+      h("div", { class: "sec-head" }, h("h2", { text: "To-do" }), h("span", { class: "sub", text: fmtLong(T) })),
+      h("form", { class: "panel addbar", onsubmit: submit },
+        h("div", { class: "addrow" }, title, h("button", { class: "btn primary", type: "submit" }, "Add")),
+        h("div", { class: "whenrow" }, date, time, h("label", { class: "chk", for: "todo-remind" }, remind, "Remind me")),
+        hint)));
+
+    if (!S.todosLoaded) { out.push(h("p", { class: "sub", text: "Loading your to-dos…" })); return out; }
+    const open = S.todos.filter((t) => !t.done);
+    const dated = open.filter((t) => t.due).sort((a, b) => (a.due + (a.time || "99")).localeCompare(b.due + (b.time || "99")));
+    const overdue = dated.filter((t) => t.due < T);
+    const today = dated.filter((t) => t.due === T);
+    const upcoming = dated.filter((t) => t.due > T);
+    const back = open.filter((t) => !t.due).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    const done = S.todos.filter((t) => t.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)).slice(0, 30);
+
+    if (!open.length && !done.length) {
+      out.push(h("div", { class: "panel empty" }, h("h3", { text: "Nothing on your list yet" }),
+        h("p", { text: "Give a to-do a date to put it on the timeline. Leave the date blank to park it on the Backburner." })));
+      return out;
+    }
+    const group = (name, items) => items.length ? h("section", null,
+      h("div", { class: "sec-head" }, h("h2", { text: name }), h("span", { class: "sub mono", text: items.length })),
+      h("div", { class: "list" }, items.map(todoItem))) : null;
+    out.push(group("Overdue", overdue));
+    out.push(group("Today", today));
+    if (upcoming.length) {
+      const sec = h("section", null, h("div", { class: "sec-head" }, h("h2", { text: "Coming up" }), h("span", { class: "sub mono", text: upcoming.length })));
+      let last = null;
+      const l = h("div", { class: "list" });
+      for (const td of upcoming) {
+        if (td.due !== last) { l.append(h("div", { class: "group-label", text: td.due === addDays(T, 1) ? "Tomorrow" : fmtLong(td.due) })); last = td.due; }
+        l.append(todoItem(td));
+      }
+      sec.append(l); out.push(sec);
+    }
+    out.push(h("section", null,
+      h("div", { class: "sec-head" }, h("h2", { text: "Backburner" }), h("span", { class: "sub", text: "No timeline. Tap one to give it a date." })),
+      back.length ? h("div", { class: "bb" }, back.map(todoItem)) : h("p", { class: "hint", text: "Add a to-do without a date and it waits here." })));
+    if (done.length) {
+      out.push(h("details", { class: "archived" }, h("summary", { text: "Done (" + done.length + ")" }),
+        h("div", { class: "list", style: "margin-top:8px" }, done.map(todoItem))));
+    }
+    return out.filter(Boolean);
+  }
+
+  function openTodoSheet(td) {
+    const f = { title: td.title, due: td.due || "", time: td.time || "", remind: td.due ? !!td.remind : true };
+    let armed = false, err = "";
+    const s = openSheet((close) => {
+      const title = h("input", { type: "text", id: "todo-edit-title", maxlength: "140" }); title.value = f.title;
+      title.addEventListener("input", () => { f.title = title.value; });
+      const date = h("input", { type: "date", id: "todo-edit-date" }); date.value = f.due;
+      date.addEventListener("change", () => { f.due = date.value; s.paint(); });
+      const time = h("input", { type: "time", id: "todo-edit-time", disabled: !f.due }); time.value = f.time;
+      time.addEventListener("change", () => { f.time = time.value; });
+      const remind = h("input", { type: "checkbox", id: "todo-edit-remind", disabled: !f.due }); remind.checked = f.remind;
+      remind.addEventListener("change", () => { f.remind = remind.checked; });
+      const del = h("button", { type: "button", class: "btn danger left" }, "Delete");
+      del.onclick = () => { if (!armed) { armed = true; del.textContent = "Tap again to delete"; return; } close(); removeTodo(td); };
+      const save = () => {
+        const nm = f.title.trim();
+        if (!nm) { err = "Give the to-do a name."; s.paint(); return; }
+        const fields = { title: nm, due: f.due || null, time: f.due ? f.time || null : null, remind: !!(f.due && f.remind) };
+        close();
+        const next = Object.assign({}, td, fields);
+        saveTodo(td.id, Object.assign({ calError: null }, fields)).then(() => syncReminder(td.id, next, td)).catch(() => toast("That change didn't save. Try again."));
+      };
+      return h("form", { style: "display:grid;gap:14px", onsubmit: (e) => { e.preventDefault(); save(); } },
+        h("h3", { text: "Edit to-do" }),
+        h("div", { class: "field" }, h("label", { for: "todo-edit-title", text: "To-do" }), title),
+        h("div", { class: "field" }, h("span", { class: "lab", text: "When" }),
+          h("div", { class: "whenrow" }, date, time, f.due ? h("button", { type: "button", class: "btn ghost", onclick: () => { f.due = ""; f.time = ""; s.paint(); } }, "Move to Backburner") : null)),
+        h("label", { class: "chk", for: "todo-edit-remind" }, remind, "Remind me (coming soon)"),
+        h("div", { class: "hint", text: f.due ? "" : "No date keeps it on the Backburner." }),
+        h("div", { class: "err", role: "alert", text: err }),
+        h("div", { class: "sheet-actions" }, del, h("button", { type: "button", class: "btn", onclick: close }, "Cancel"), h("button", { class: "btn primary", type: "submit" }, "Save")));
+    });
+  }
+
+  // ---------- sheets ----------
+  let openSheetRender = null;
+  function openSheet(build) {
+    const layer = document.getElementById("layer");
+    const close = () => { layer.replaceChildren(); openSheetRender = null; document.removeEventListener("keydown", onKey); };
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    document.addEventListener("keydown", onKey);
+    const overlay = h("div", { class: "overlay", onclick: (e) => { if (e.target === overlay) close(); } });
+    const sheet = h("div", { class: "sheet", role: "dialog", "aria-modal": "true" });
+    overlay.append(sheet);
+    layer.replaceChildren(overlay);
+    const paint = () => { sheet.replaceChildren(...[].concat(build(close))); };
+    paint();
+    return { close, paint };
+  }
+
+  function openDaySheet(key) {
+    const s = openSheet((close) => {
+      const st = dayStats(key);
+      const rows = active().map((hb) => {
+        const meta = hb.kind === "weekly" ? weekCount(hb.id, weekStart(key)) + " of " + (hb.target || 1) + " that week"
+          : baseSched(hb, key) ? (key < hb.start ? "Before you added it" : "Scheduled") : "Not scheduled";
+        return habitRow(hb, key, meta, hb.kind !== "weekly" && !baseSched(hb, key), () => s.paint());
+      });
+      archived().filter((hb) => isDone(hb.id, key)).forEach((hb) => {
+        rows.push(habitRow(hb, key, "Archived", false, () => s.paint()));
+      });
+      return [
+        h("h3", { text: fmtLong(key) }),
+        h("span", { class: "sub", text: st.total ? st.done + " of " + st.total + " done" : "Nothing scheduled" }),
+        rows.length ? h("div", { class: "list" }, rows) : h("p", { class: "sub", text: "Add a habit first, then you can check off past days here." }),
+        h("div", { class: "sheet-actions" }, h("button", { class: "btn primary", onclick: close }, "Done")),
+      ];
+    });
+  }
+
+  function openJournalSheet(key) {
+    if (key > S.today) return;
+    openSheet((close) => [
+      h("h3", { text: fmtLong(key) }),
+      journalEditor(key, { id: "j-sheet", allowClear: true, cancel: close, onSaved: close }),
+    ]);
+  }
+
+  function openHabitSheet(hb) {
+    const editing = !!hb;
+    const f = editing
+      ? { name: hb.name, kind: hb.kind, days: (hb.days || [1, 2, 3, 4, 5]).slice(), target: hb.target || 3, color: hb.color || "jade" }
+      : { name: "", kind: "daily", days: [1, 2, 3, 4, 5], target: 3, color: COLORS[active().length % COLORS.length] };
+    let err = "";
+    const s = openSheet((close) => {
+      const name = h("input", { type: "text", id: "habit-name", maxlength: "60", placeholder: "Read 20 pages", autocomplete: "off" });
+      name.value = f.name;
+      name.addEventListener("input", () => { f.name = name.value; });
+      const seg = h("div", { class: "seg" }, [["daily", "Every day"], ["weekdays", "Certain days"], ["weekly", "Times a week"]].map(([k, l]) =>
+        h("button", { type: "button", "aria-pressed": f.kind === k ? "true" : "false", onclick: () => { f.kind = k; s.paint(); } }, l)));
+      let extra = null;
+      if (f.kind === "weekdays") {
+        extra = h("div", { class: "field" }, h("span", { class: "lab", text: "On these days" }),
+          h("div", { class: "days" }, DAY_LETTERS.map((L, i) => h("button", { type: "button", "aria-label": DAY_NAMES[i], "aria-pressed": f.days.includes(i) ? "true" : "false",
+            onclick: () => { f.days = f.days.includes(i) ? f.days.filter((x) => x !== i) : f.days.concat(i); s.paint(); } }, L))));
+      } else if (f.kind === "weekly") {
+        extra = h("div", { class: "field" }, h("span", { class: "lab", text: "How many times a week (Sunday to Saturday)" }),
+          h("div", { class: "stepper" },
+            h("button", { type: "button", "aria-label": "Fewer", onclick: () => { f.target = Math.max(1, f.target - 1); s.paint(); } }, "−"),
+            h("b", { class: "mono", style: "font-size:20px;min-width:2ch;text-align:center", text: f.target }),
+            h("button", { type: "button", "aria-label": "More", onclick: () => { f.target = Math.min(7, f.target + 1); s.paint(); } }, "+")));
+      }
+      const sw = h("div", { class: "swatches" }, COLORS.map((c) => h("button", { type: "button", "aria-label": c, style: "--hc:var(--h-" + c + ")", "aria-pressed": f.color === c ? "true" : "false", onclick: () => { f.color = c; s.paint(); } })));
+      const save = async () => {
+        const nm = f.name.trim();
+        if (!nm) { err = "Give the habit a name."; s.paint(); return; }
+        if (f.kind === "weekdays" && !f.days.length) { err = "Pick at least one day."; s.paint(); return; }
+        const fields = { name: nm, kind: f.kind, days: f.days.slice().sort(), target: f.target, color: f.color };
+        close();
+        try {
+          if (editing) await saveHabit(hb.id, fields);
+          else await saveHabit(newId(), Object.assign(fields, { start: S.today, archived: false, archivedAt: null, order: Date.now() }));
+        } catch (e) { toast("That habit didn't save. Try again."); }
+      };
+      const actions = h("div", { class: "sheet-actions" });
+      if (editing) actions.append(h("button", { class: "btn danger left", onclick: () => { close(); saveHabit(hb.id, { archived: true, archivedAt: S.today }).then(() => toast("Archived " + hb.name, () => saveHabit(hb.id, { archived: false, archivedAt: null }))).catch(() => toast("Couldn't archive that habit.")); } }, "Archive"));
+      actions.append(h("button", { class: "btn", onclick: close }, "Cancel"), h("button", { class: "btn primary", onclick: save }, editing ? "Save" : "Add habit"));
+      const formEl = h("form", { style: "display:grid;gap:14px", onsubmit: (e) => { e.preventDefault(); save(); } },
+        h("h3", { text: editing ? "Edit habit" : "New habit" }),
+        h("div", { class: "field" }, h("label", { for: "habit-name", text: "Name" }), name),
+        h("div", { class: "field" }, h("span", { class: "lab", text: "Repeats" }), seg),
+        extra,
+        h("div", { class: "field" }, h("span", { class: "lab", text: "Color" }), sw),
+        h("div", { class: "err", role: "alert", text: err }),
+        actions);
+      setTimeout(() => { if (!f.name) name.focus(); }, 30);
+      return formEl;
+    });
+  }
+
+  // ---------- render ----------
+  function render() {
+    S.today = todayKey();
+    const view = document.getElementById("view");
+    const focusId = document.activeElement && document.activeElement.id;
+    const selStart = document.activeElement && document.activeElement.selectionStart;
+    document.getElementById("tab-habits").setAttribute("aria-selected", S.tab === "habits");
+    document.getElementById("tab-todo").setAttribute("aria-selected", S.tab === "todo");
+    document.getElementById("tab-journal").setAttribute("aria-selected", S.tab === "journal");
+    // keep the textarea alive while typing today's entry
+    if (S.tab === "journal" && focusId === "j-today") return;
+    view.replaceChildren(h("div", { style: "display:grid;gap:26px" }, S.tab === "habits" ? renderHabits() : S.tab === "todo" ? renderTodos() : renderJournal()));
+    restoreScroll(view);
+    if (focusId) { const el = document.getElementById(focusId); if (el && el.closest("#view")) { el.focus(); if (selStart != null && el.setSelectionRange) try { el.setSelectionRange(selStart, selStart); } catch (e) {} } }
+  }
+  function setTab(t) { S.tab = t; try { history.replaceState(null, "", "#" + t); } catch (e) { location.hash = t; } render(); }
+  document.getElementById("tab-habits").onclick = () => setTab("habits");
+  document.getElementById("tab-journal").onclick = () => setTab("journal");
+  document.getElementById("tab-todo").onclick = () => setTab("todo");
+  window.addEventListener("hashchange", () => { const t = ({ "#journal": "journal", "#todo": "todo" })[location.hash] || "habits"; if (t !== S.tab) { S.tab = t; render(); } });
+  setInterval(() => { if (todayKey() !== S.today) render(); }, 60000);
+
+  function notice(msg) { const n = document.getElementById("notice"); n.textContent = msg || ""; n.hidden = !msg; }
+
+  // ---------- data ----------
+  render();
+  const getDb = window.claude && window.claude.use ? window.claude.use("db").catch(() => null) : Promise.resolve(null);
+  getDb.then((db) => {
+    if (!db) {
+      S.offline = true; S.habitsLoaded = true; S.logLoaded = true; S.journalLoaded = true; S.todosLoaded = true;
+      notice("Saving isn't available in this view, so changes here last only until you close the page.");
+      render(); return;
+    }
+    S.db = db;
+    let timer = setTimeout(() => { if (!S.serverSeen) notice("Can't reach your saved habits yet. What you see may be out of date."); }, 10000);
+    const seen = (snap) => { if (!snap.metadata.fromCache && !S.serverSeen) { S.serverSeen = true; clearTimeout(timer); notice(""); } };
+    const onErr = (e) => { clearTimeout(timer); S.habitsLoaded = S.logLoaded = S.journalLoaded = S.todosLoaded = true; notice(e && e.code === "revoked" ? "Saving is no longer available on this page." : "Your saved data couldn't load. Reopen the page to try again."); render(); };
+    db.collection("todos").onSnapshot((snap) => {
+      S.todos = snap.docs.map((d) => Object.assign({ id: d.id }, d.data())).filter((x) => x.title);
+      S.todosLoaded = true; seen(snap); render();
+    }, onErr);
+    db.collection("habits").onSnapshot((snap) => {
+      S.habits = snap.docs.map((d) => Object.assign({ id: d.id }, d.data())).filter((x) => x.name && x.start);
+      S.habitsLoaded = true; seen(snap); render();
+    }, onErr);
+    db.collection("log").onSnapshot((snap) => {
+      S.logDocs = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      rebuildChecks(); S.logLoaded = true; seen(snap); render();
+    }, onErr);
+    db.collection("journal").onSnapshot((snap) => {
+      S.journalDocs = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      S.journalLoaded = true; seen(snap); render();
+    }, onErr);
+  });
+})();
+</script>
+<script>
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
